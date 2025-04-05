@@ -909,17 +909,20 @@ import { toast } from './ui/use-toast';
 import { Button } from './ui/button';
 import { Call } from '@stream-io/video-react-sdk';
 
-// Declare SpeechRecognition type for TypeScript
-interface SpeechRecognition extends EventTarget {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  start: () => void;
-  stop: () => void;
-  onstart: (() => void) | null;
-  onresult: ((event: SpeechRecognitionEvent) => void) | null;
-  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
-  onend: (() => void) | null;
+// Define SpeechRecognition-related types
+interface SpeechRecognitionResultList {
+  [index: number]: SpeechRecognitionResult;
+  length: number;
+}
+
+interface SpeechRecognitionResult {
+  [index: number]: SpeechRecognitionAlternative;
+  isFinal: boolean;
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
 }
 
 interface SpeechRecognitionEvent {
@@ -930,11 +933,16 @@ interface SpeechRecognitionErrorEvent {
   error: string;
 }
 
-declare global {
-  interface Window {
-    SpeechRecognition: new () => SpeechRecognition;
-    webkitSpeechRecognition: new () => SpeechRecognition;
-  }
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: () => void;
+  stop: () => void;
+  onstart: (() => void) | null;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
 }
 
 const TranslationWithToggle = ({ call }: { call: Call }) => {
@@ -1004,7 +1012,7 @@ const TranslationWithToggle = ({ call }: { call: Call }) => {
   const setupSpeechRecognition = useCallback(() => {
     if (typeof window === 'undefined') return;
 
-    const SpeechRecognitionConstructor = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognitionConstructor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognitionConstructor) {
       toast({
         title: 'Error',
@@ -1014,7 +1022,7 @@ const TranslationWithToggle = ({ call }: { call: Call }) => {
       return;
     }
 
-    const recognition = new SpeechRecognitionConstructor();
+    const recognition = new SpeechRecognitionConstructor() as SpeechRecognition;
     recognition.continuous = true;
     recognition.interimResults = false;
     recognition.lang = sourceLangRef.current;
