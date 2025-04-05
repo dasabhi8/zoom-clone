@@ -902,7 +902,7 @@
 //  new working code ====---------------------
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supportedLanguages, translateText, textToSpeech } from '@/lib/translation';
 import { Languages } from 'lucide-react';
 import { toast } from './ui/use-toast';
@@ -960,7 +960,9 @@ const TranslationWithToggle = ({ call }: { call: Call }) => {
       }
     };
 
-    setupAudio();
+    if (typeof window !== 'undefined') {
+      setupAudio();
+    }
 
     return () => {
       stopTranslation();
@@ -971,15 +973,9 @@ const TranslationWithToggle = ({ call }: { call: Call }) => {
     };
   }, [call]);
 
-  useEffect(() => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      recognitionRef.current = null;
-    }
-    setupSpeechRecognition();
-  }, [sourceLang, targetLang]);
+  const setupSpeechRecognition = useCallback(() => {
+    if (typeof window === 'undefined') return;
 
-  const setupSpeechRecognition = () => {
     const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       toast({
@@ -1066,7 +1062,15 @@ const TranslationWithToggle = ({ call }: { call: Call }) => {
     };
 
     recognitionRef.current = recognition;
-  };
+  }, [isTranslating]);
+
+  useEffect(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+    setupSpeechRecognition();
+  }, [sourceLang, targetLang, setupSpeechRecognition]);
 
   const startTranslation = async () => {
     if (!recognitionRef.current) {
@@ -1126,10 +1130,10 @@ const TranslationWithToggle = ({ call }: { call: Call }) => {
       </Button>
 
       {showTranslator && (
-        <div className="mt-4 bg-gray-900 p-4 rounded-md shadow-lg min-w-[250px] text-white">
+        <div className="mt-4 rounded-md bg-gray-900 p-4 shadow-lg min-w-[250px] text-white">
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
-              <Languages className="h-5 w-5" />
+              <Languages className="size-5" />
               <span className="text-sm font-medium">Translation Controls</span>
             </div>
 
