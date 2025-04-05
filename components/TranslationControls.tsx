@@ -909,6 +909,34 @@ import { toast } from './ui/use-toast';
 import { Button } from './ui/button';
 import { Call } from '@stream-io/video-react-sdk';
 
+// Declare SpeechRecognition type for TypeScript
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: () => void;
+  stop: () => void;
+  onstart: (() => void) | null;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+}
+
+interface SpeechRecognitionEvent {
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionErrorEvent {
+  error: string;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition: new () => SpeechRecognition;
+    webkitSpeechRecognition: new () => SpeechRecognition;
+  }
+}
+
 const TranslationWithToggle = ({ call }: { call: Call }) => {
   const [showTranslator, setShowTranslator] = useState(false);
   const [sourceLang, setSourceLang] = useState('en-US');
@@ -976,8 +1004,8 @@ const TranslationWithToggle = ({ call }: { call: Call }) => {
   const setupSpeechRecognition = useCallback(() => {
     if (typeof window === 'undefined') return;
 
-    const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
+    const SpeechRecognitionConstructor = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognitionConstructor) {
       toast({
         title: 'Error',
         description: 'Speech recognition not supported in this browser. Use Chrome for best results.',
@@ -986,7 +1014,7 @@ const TranslationWithToggle = ({ call }: { call: Call }) => {
       return;
     }
 
-    const recognition = new SpeechRecognition();
+    const recognition = new SpeechRecognitionConstructor();
     recognition.continuous = true;
     recognition.interimResults = false;
     recognition.lang = sourceLangRef.current;
@@ -1130,7 +1158,7 @@ const TranslationWithToggle = ({ call }: { call: Call }) => {
       </Button>
 
       {showTranslator && (
-        <div className="mt-4 rounded-md bg-gray-900 p-4 shadow-lg min-w-[250px] text-white">
+        <div className="mt-4 min-w-[250px] rounded-md bg-gray-900 p-4 shadow-lg text-white">
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <Languages className="size-5" />
