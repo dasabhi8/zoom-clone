@@ -909,10 +909,10 @@ import { toast } from './ui/use-toast';
 import { Button } from './ui/button';
 import { Call } from '@stream-io/video-react-sdk';
 
-// Define SpeechRecognition-related types
-interface SpeechRecognitionResultList {
-  [index: number]: SpeechRecognitionResult;
-  length: number;
+// Define SpeechRecognition-related types in correct order
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
 }
 
 interface SpeechRecognitionResult {
@@ -920,9 +920,9 @@ interface SpeechRecognitionResult {
   isFinal: boolean;
 }
 
-interface SpeechRecognitionAlternative {
-  transcript: string;
-  confidence: number;
+interface SpeechRecognitionResultList {
+  [index: number]: SpeechRecognitionResult;
+  length: number;
 }
 
 interface SpeechRecognitionEvent {
@@ -1007,7 +1007,7 @@ const TranslationWithToggle = ({ call }: { call: Call }) => {
       mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
       audioContextRef.current?.close();
     };
-  }, [call]);
+  }, [call, setupSpeechRecognition]); // Added setupSpeechRecognition here
 
   const setupSpeechRecognition = useCallback(() => {
     if (typeof window === 'undefined') return;
