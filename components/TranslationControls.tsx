@@ -969,46 +969,6 @@ const TranslationWithToggle = ({ call }: { call: Call }) => {
     targetLangRef.current = targetLang;
   }, [targetLang]);
 
-  useEffect(() => {
-    const setupAudio = async () => {
-      try {
-        mediaStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
-        audioContextRef.current = new AudioContext();
-        streamDestinationRef.current = audioContextRef.current.createMediaStreamDestination();
-        translatedStreamRef.current = streamDestinationRef.current.stream;
-
-        originalAudioSourceRef.current = audioContextRef.current.createMediaStreamSource(mediaStreamRef.current);
-        originalAudioSourceRef.current.connect(streamDestinationRef.current);
-
-        if (call && translatedStreamRef.current) {
-          await call.publishAudioStream(translatedStreamRef.current);
-          console.log('Audio stream published successfully');
-        }
-
-        setupSpeechRecognition();
-      } catch (error) {
-        console.error('Error setting up audio:', error);
-        toast({
-          title: 'Error',
-          description: 'Could not access microphone. Please allow microphone access.',
-          variant: 'destructive',
-        });
-      }
-    };
-
-    if (typeof window !== 'undefined') {
-      setupAudio();
-    }
-
-    return () => {
-      stopTranslation();
-      recognitionRef.current?.stop();
-      recognitionRef.current = null;
-      mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
-      audioContextRef.current?.close();
-    };
-  }, [call, setupSpeechRecognition]); // Added setupSpeechRecognition here
-
   const setupSpeechRecognition = useCallback(() => {
     if (typeof window === 'undefined') return;
 
@@ -1099,6 +1059,46 @@ const TranslationWithToggle = ({ call }: { call: Call }) => {
 
     recognitionRef.current = recognition;
   }, [isTranslating]);
+
+  useEffect(() => {
+    const setupAudio = async () => {
+      try {
+        mediaStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioContextRef.current = new AudioContext();
+        streamDestinationRef.current = audioContextRef.current.createMediaStreamDestination();
+        translatedStreamRef.current = streamDestinationRef.current.stream;
+
+        originalAudioSourceRef.current = audioContextRef.current.createMediaStreamSource(mediaStreamRef.current);
+        originalAudioSourceRef.current.connect(streamDestinationRef.current);
+
+        if (call && translatedStreamRef.current) {
+          await call.publishAudioStream(translatedStreamRef.current);
+          console.log('Audio stream published successfully');
+        }
+
+        setupSpeechRecognition();
+      } catch (error) {
+        console.error('Error setting up audio:', error);
+        toast({
+          title: 'Error',
+          description: 'Could not access microphone. Please allow microphone access.',
+          variant: 'destructive',
+        });
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      setupAudio();
+    }
+
+    return () => {
+      stopTranslation();
+      recognitionRef.current?.stop();
+      recognitionRef.current = null;
+      mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
+      audioContextRef.current?.close();
+    };
+  }, [call, setupSpeechRecognition]);
 
   useEffect(() => {
     if (recognitionRef.current) {
